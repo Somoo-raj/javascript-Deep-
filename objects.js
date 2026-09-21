@@ -77,3 +77,17 @@ delete childObj.role; // if child.role("Editor") deleted. then pass --> (prototy
 
 console.log(childObj.role); // Admin 
 console.log(childObj.accessLevel); // 8
+
+// the object key property mutation.
+
+const obj = {
+    a: 1,
+    b: 2
+};
+
+const key = "a";
+obj[key] = 10; // obj.a = 10 (updated)
+obj.key = 20; // 20  (dot(.) nation doesn't look for a variable instead, it directly creates a new property named "key" and sets its value to 20!.)
+
+console.log(obj.a); // 10
+console.log(obj.key); // 20
