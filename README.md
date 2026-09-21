@@ -1,2 +1,2 @@
-# javascript-Deep-
+# javascript-Deep-dive
 Deep dive
