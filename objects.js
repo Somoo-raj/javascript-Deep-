@@ -78,7 +78,7 @@ delete childObj.role; // if child.role("Editor") deleted. then pass --> (prototy
 console.log(childObj.role); // Admin 
 console.log(childObj.accessLevel); // 8
 
-// the object key property mutation.
+// 6. the object key property mutation.
 
 const obj = {
     a: 1,
@@ -91,3 +91,41 @@ obj.key = 20; // 20  (dot(.) nation doesn't look for a variable instead, it dire
 
 console.log(obj.a); // 10
 console.log(obj.key); // 20
+
+// 7. Object.assign() shallow copy trap
+
+const target = {a: 1, b: {c: 2}};
+const source = {b: {c: 3}};
+// Object.assign() performs a shallow copy. A memory reference to the inner object {c: 3} is passed, not a new copy.
+
+Object.assign(target, source); // overwrite target.b with source.b. now target.b is directly pointing (referencing) to the nested object {c: 3} containing source.b
+source.b.c = 99; // after that, when did source.b.c also changed to 99 bCoz the reference was the same.
+
+console.log(target.b.c);// 99
+
+// 8. Object.freeze() vs nested objects.
+
+const user = {
+    name: "Amit", // freeze 1st property (Primitive)
+    address: {    // address pointer freeze 
+        city: "Delhi" // nested objects property unfreeze they can modify
+    }
+};
+
+Object.freeze(user);
+
+user.name = "Rahul"; 
+user.address.city = "Mumbai";
+
+console.log(user.name); // Amit
+console.log(user.address.city); // Mumbai
+
+// 9. prototype global object property lookup.
+
+const proto = {a: 10};
+const objct = Object.create(proto); // copy proto object and return new own object
+
+objct.a++; // modified only own objct property not proto property.
+
+console.log(objct.a); // 11
+console.log(proto.a); // 10
