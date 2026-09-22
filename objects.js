@@ -1,16 +1,26 @@
-// 1. Array of objects reference trap
+// *** 1. Array of objects reference trap ***
 
 const originalCart = [
     {id : 1, name: "Laptop", price: 32000 },
     {id : 2, name: "Phone", price: 12000 }
 ]
-// shallow copy of the array using spread
+
+// ...originalCart creates a shallow copy of the array.
+// It copies the array structure, but the inner objects are still the same objects in memory.
+// So originalCart[0] and updateCart[0] both point to the same object.
+
 const updateCart = [...originalCart];
 
 // Action A
+// Adds a new object only to updateCart.
+// originalCart stays length 2.
+
 updateCart.push({id : 3, name: "Watch", price: 5000 });
 
 // Action B
+// This changes the first inner object.
+// Since both arrays reference the same object, originalCart[0].price also becomes 34000.
+
 updateCart[0].price = 34000;
 
 console.log(originalCart.length); // 2
@@ -18,35 +28,66 @@ console.log(originalCart[0].price); // 34000
 console.log(updateCart.length); // 3
 console.log(updateCart[2].price); // 5000
 
-// 2. deleting properties & references
+// key point: Shallow copy does not clone nested objects.
+
+
+
+// *** 2. deleting properties & references ***
 
 let player1 = {name: "virat", role: "Batsman"};
+
+// player2 points to the same object as player1.
 let player2 = player1;
 
-delete player2.role; // delete string value and return undefined.
+// This deletes the role property from the shared object.
+// Since both variables reference the same object, player1.role becomes undefined.
 
-player2 = {name: "Rohit", role: "Captain"}; // the pointer for player2 shifted to the new memory address.
+delete player2.role;
+
+// This does NOT change player1.
+// It reassigns player2 to a completely new object.
+// So player1 stays as { name: "virat" } after deletion.
+
+player2 = {name: "Rohit", role: "Captain"};
 
 console.log(player1.role); // undefined
 console.log(player1.name); // virat
 console.log(player2); // {name: "Rohit", role: "Captain"}
 console.log(player1); // {name: "virat"}
 
-// 3. object key overwrite & coercion trap.
+// Key point: delete affects the object itself.
+// Reassigning a variable changes only that variable’s reference, not the original object.
+
+
+
+// *** 3. object key overwrite & coercion trap. ***
 
 const a = {};
 const b = {name: "sk"};
 const c = {name: "rk"};
-// js object keys are always strings, when try to use an object as a keys like => a[b], the js engine converts that object into a string that is => a.toString() => ["[object object]"]
-a[b] = 123; // a["[object object]"] = 123 
-a[c] = 456; // a["[object object"] = 456 (same key overwrite)
-console.log(a[b]); // 456
 
-// 4. object.freez() vs nested reference trap.
+// In JavaScript, object keys are strings.
+// When you use an object as a key, JavaScript converts it to a string.
+
+a[b] = 123;
+a[c] = 456;
+
+// b and c are objects.
+// Both are converted to the same string: "[object Object]".
+// So both assignments overwrite the same key.
+
+console.log(a[b]); // Result is 456 because the second assignment overwrote the first.
+
+// Key point: Object keys are not unique by object identity; they become strings.
+
+
+
+// *** 4. object.freez() vs nested reference trap. ***
+
+// Object.freeze() makes the top-level object immutable.
+// But settings is a nested object, and it is still mutable because freeze is shallow.
 
 const userProfile = Object.freeze({
-    // Object.freeze() performs a shallow freeze!, top-level keys like (username,userpass or settings) get frozen(locked no delete no changes of this keys value), but nested objects (such as the object inside 'settings') remain mutable in memory. they can still be modified!. => (Object.freeze() => specially uses for nested object and array)
-
     username: "coder_99", // Locked (Primitive)
     userpass: 1234, // Locked (Primitive)
     settings: { // Address pointer locked
@@ -54,65 +95,105 @@ const userProfile = Object.freeze({
     }
 });
 
-// can not modified.
+// These changes do not work because top-level properties are frozen.
 userProfile.username = "pro_coder";
-// can not modified.
 userProfile.userpass = 9876;
-// keys inside nested object remain mutable in memory can still be modified.
+
+// This works because settings is a nested object and was not frozen.
 userProfile.settings.theme = "light";
+
 console.log(userProfile.username); // coder_99 
 console.log(userProfile.userpass); // 1234
 console.log(userProfile.settings.theme); // light
 
-// 5. prototype vs own property lookup engine.
+// Key point: Object.freeze() is shallow, not deep.
+
+
+
+// *** 5. prototype vs own property lookup engine. ***
+
+// childObj inherits from parentObj.
+// It has a prototype link to parentObj.
 
 const parentObj = {role: "Admin", accessLevel: 8 };
-// Object.create() creates a new object and sets the prototype(_proto_) of that new object to the old object (child inherit from parent)
 const childObj = Object.create(parentObj);
 
-childObj.role = "Editor"; // child => "Editor" --> (prototype link) --> parent => "Admin"
+// Now childObj has its own role property.
+// So childObj.role becomes "Editor" before checking the prototype.
 
-// the `delete` keyword only removes an object's 'Own' property, it cannot touch properties within the prototype chain. once the own property is deleted, the engine retrieves the callback value from the prototype chain!.
-delete childObj.role; // if child.role("Editor") deleted. then pass --> (prototype link) --> parent.role => ("Admin")
+childObj.role = "Editor";
+
+// This deletes the child’s own property.
+// Then JavaScript looks up the prototype chain and finds parentObj.role, which is "Admin".
+
+delete childObj.role;
 
 console.log(childObj.role); // Admin 
 console.log(childObj.accessLevel); // 8
 
-// 6. the object key property mutation.
+// Key point: delete removes only own properties, not prototype properties.
+
+
+
+// *** 6. the object key property mutation. ***
 
 const obj = {
     a: 1,
     b: 2
 };
 
+// obj[key] is same as obj["a"] → changes a to 10.
+// obj.key creates a new property literally named "key", not "a".
+
 const key = "a";
-obj[key] = 10; // obj.a = 10 (updated)
-obj.key = 20; // 20  (dot(.) nation doesn't look for a variable instead, it directly creates a new property named "key" and sets its value to 20!.)
+obj[key] = 10;
+obj.key = 20;
 
 console.log(obj.a); // 10
 console.log(obj.key); // 20
 
-// 7. Object.assign() shallow copy trap
+/* Key point:
+obj[key] uses variable value.
+obj.key uses a literal property name. */
+
+
+
+// *** 7. Object.assign() shallow copy trap. ***
 
 const target = {a: 1, b: {c: 2}};
 const source = {b: {c: 3}};
-// Object.assign() performs a shallow copy. A memory reference to the inner object {c: 3} is passed, not a new copy.
 
-Object.assign(target, source); // overwrite target.b with source.b. now target.b is directly pointing (referencing) to the nested object {c: 3} containing source.b
-source.b.c = 99; // after that, when did source.b.c also changed to 99 bCoz the reference was the same.
+// This copies the top-level b property from source into target.
+// It does not deep clone nested objects.
+// So target.b now points to the same nested object as source.b.
+
+Object.assign(target, source);
+
+// Since both target.b and source.b reference the same nested object, target.b.c also becomes 99.
+source.b.c = 99;
 
 console.log(target.b.c);// 99
 
-// 8. Object.freeze() vs nested objects.
+// Key point: Object.assign() is shallow.
+
+
+
+// *** 8. Object.freeze() vs nested objects. ***
 
 const user = {
-    name: "Amit", // freeze 1st property (Primitive)
-    address: {    // address pointer freeze 
-        city: "Delhi" // nested objects property unfreeze they can modify
+    name: "Amit",
+    address: {
+        city: "Delhi"
     }
 };
 
+// Top-level user is frozen.
+// But nested address object is not frozen.
+
 Object.freeze(user);
+
+// First assignment fails because name is frozen.
+// Second assignment succeeds because nested object is mutable.
 
 user.name = "Rahul"; 
 user.address.city = "Mumbai";
@@ -120,12 +201,27 @@ user.address.city = "Mumbai";
 console.log(user.name); // Amit
 console.log(user.address.city); // Mumbai
 
+// Key point: Freeze only affects the object you call it on, not deeply nested objects.
+
+
+
 // 9. prototype global object property lookup.
 
 const proto = {a: 10};
-const objct = Object.create(proto); // copy proto object and return new own object
 
-objct.a++; // modified only own objct property not proto property.
+// objct inherits from proto.
+const objct = Object.create(proto);
+
+// JavaScript sees objct does not have its own a.
+// It finds inherited a from the prototype.
+// Then it creates or modifies a new own property on objct with value 11.
+// So:
+// objct.a becomes 11
+// proto.a remains 10
+
+objct.a++;
 
 console.log(objct.a); // 11
 console.log(proto.a); // 10
+
+// Key point: Incrementing inherited property creates an own property on the child, without changing the prototype.
